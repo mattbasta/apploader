@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Apploader</title>
+    <meta name="author" content="Matt Basta @mattbasta">
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/style.css" rel="stylesheet">
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/bootstrap.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="navbar">
+        <div class="navbar-inner">
+          <a class="brand" href="#">
+            Apploader
+          </a>
+        </div>
+      </div>
+
+      <p>
+        Post the URL to your app and we'll give you a short URL that you can
+        install the app from on a device.
+      </p>
+
+      <ul class="nav nav-tabs">
+        <li class="active"><a href="#web" data-toggle="tab">Web App</a></li>
+        <li><a href="#packaged" data-toggle="tab">Packaged app</a></li>
+      </ul>
+
+      <div class="tab-content">
+        <form class="tab-pane active quick-download" id="web" method="post">
+          <input type="text" placeholder="http://" name="url" />
+          <input class="btn btn-success" type="submit" value="Post" />
+        </form>
+
+        <form class="tab-pane form-horizontal" id="packaged" method="post" enctype="multipart/form-data" action="{{ upload_url }}">
+          <div class="control-group">
+            <label class="control-label">Package</label>
+            <div class="controls">
+              <input type="file" name="package" />
+            </div>
+          </div>
+
+          <p class="form-actions">
+            <input class="btn btn-success" type="submit" value="Post" />
+          </p>
+        </form>
+      </div>
+
+      <footer>
+        Fork me on <a href="https://github.com/mattbasta/apploader">Github</a>
+      </footer>
+
+    </div>
+  </body>
+</html>
