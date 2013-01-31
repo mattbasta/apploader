@@ -15,8 +15,11 @@
 # limitations under the License.
 #
 import datetime
+import json
 import random
 import urllib
+from StringIO import StringIO
+from zipfile import ZipFile, ZIP_DEFLATED
 
 import webapp2
 from google.appengine.ext import blobstore
@@ -27,7 +30,7 @@ from webapp2_extras import jinja2
 from models.entry import Entry
 
 
-chars = "0123456789abcdefABCDEF"
+chars = "123456789abcdef"
 
 
 def nice_guid():
@@ -83,10 +86,64 @@ class GetHandler(BaseHandler):
     def get(self, slug):
         app = Entry.all().filter('slug =', slug).get()
         if app.packaged:
-            self.render_template("install.html", url='/serve/%s' % app.url,
+            self.render_template("install.html", url='/minifest/%s' % slug,
                                  packaged=True)
         else:
             self.render_template("install.html", url=app.url, packaged=False)
+
+
+class MinifestHandler(blobstore_handlers.BlobstoreDownloadHandler):
+    def get(self, slug):
+        self.response.headers.add_header(
+            "Content-type", "application/x-web-app-manifest+json")
+
+        try:
+            app = Entry.all().filter('slug =', slug).get()
+        except Exception:
+            self.response.write('{"error":"Not found."}')
+            return
+
+        try:
+            blob_reader = blobstore.BlobReader(app.url)
+        except Exception:
+            self.response.write('{"error":"Could not retrieve package."}')
+            return
+
+        try:
+            package = ZipFile(StringIO(blob_reader.read()))
+        except Exception:
+            self.response.write('{"error":"Could not retrieve package."}')
+            return
+
+        try:
+            manifest = package.read("manifest.webapp")
+        except Exception:
+            self.response.write('{"error":"Could not open manifest."}')
+            return
+
+        try:
+            unjsoned = json.loads(manifest)
+        except Exception:
+            self.response.write('{"error":"Could not parse manifest."}')
+            return
+
+        try:
+            name = unjsoned["name"]
+        except Exception:
+            self.response.write('{"error":"Could not read app name."}')
+            return
+
+        try:
+            version = unjsoned["version"]
+        except Exception:
+            self.response.write('{"error":"Could not read app version."}')
+            return
+
+        self.response.write(json.dumps({
+            "name": name,
+            "package_path": "/serve/%s" % app.url,
+            "version": version,
+        }))
 
 
 class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
@@ -96,6 +153,7 @@ class ServeHandler(blobstore_handlers.BlobstoreDownloadHandler):
 
 app = webapp2.WSGIApplication([
     ('/upload', UploadHandler),
+    ('/minifest/(.+)', MinifestHandler),
     ('/serve/(.+)', ServeHandler),
     ('/([%s]+)' % chars, GetHandler),
     ('/', MainHandler),
