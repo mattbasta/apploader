@@ -13,7 +13,7 @@ function canInstall(manifest) {
         request = navigator.mozApps.checkInstalled(manifest);
     } catch(e) {
         fired = true;
-        return;
+        return success;
     }
     request.onerror = function() {
         alert('Error: ' + this.error.message);
